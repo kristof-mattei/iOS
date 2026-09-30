@@ -17,8 +17,19 @@ public struct NotificationAction: Codable, Equatable, Identifiable {
     public var authenticationRequired: Bool
 
     // Text Input Options
-    public var textInputButtonTitle: String
-    public var textInputPlaceholder: String
+    // nil falls back to the localized default on read, so building an action doesn't touch `Current`
+    private var customTextInputButtonTitle: String?
+    private var customTextInputPlaceholder: String?
+
+    public var textInputButtonTitle: String {
+        get { customTextInputButtonTitle ?? L10n.NotificationsConfigurator.Action.Rows.TextInputButtonTitle.title }
+        set { customTextInputButtonTitle = newValue }
+    }
+
+    public var textInputPlaceholder: String {
+        get { customTextInputPlaceholder ?? L10n.NotificationsConfigurator.Action.Rows.TextInputPlaceholder.title }
+        set { customTextInputPlaceholder = newValue }
+    }
 
     public init(
         id: String = UUID().uuidString,
@@ -42,10 +53,38 @@ public struct NotificationAction: Codable, Equatable, Identifiable {
         self.foreground = foreground
         self.destructive = destructive
         self.authenticationRequired = authenticationRequired
-        self.textInputButtonTitle = textInputButtonTitle
-            ?? L10n.NotificationsConfigurator.Action.Rows.TextInputButtonTitle.title
-        self.textInputPlaceholder = textInputPlaceholder
-            ?? L10n.NotificationsConfigurator.Action.Rows.TextInputPlaceholder.title
+        self.customTextInputButtonTitle = textInputButtonTitle
+        self.customTextInputPlaceholder = textInputPlaceholder
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case identifier
+        case title
+        case textInput
+        case isServerControlled
+        case icon
+        case foreground
+        case destructive
+        case authenticationRequired
+        case customTextInputButtonTitle = "textInputButtonTitle"
+        case customTextInputPlaceholder = "textInputPlaceholder"
+    }
+
+    // writes the resolved labels, since earlier app versions decode both as required
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(identifier, forKey: .identifier)
+        try container.encode(title, forKey: .title)
+        try container.encode(textInput, forKey: .textInput)
+        try container.encode(isServerControlled, forKey: .isServerControlled)
+        try container.encodeIfPresent(icon, forKey: .icon)
+        try container.encode(foreground, forKey: .foreground)
+        try container.encode(destructive, forKey: .destructive)
+        try container.encode(authenticationRequired, forKey: .authenticationRequired)
+        try container.encode(textInputButtonTitle, forKey: .customTextInputButtonTitle)
+        try container.encode(textInputPlaceholder, forKey: .customTextInputPlaceholder)
     }
 
     public init(action: MobileAppConfigPushCategory.Action) {

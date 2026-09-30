@@ -113,6 +113,14 @@ class NotificationCategoryTests: XCTestCase {
         XCTAssertFalse(action.textInputPlaceholder.isEmpty)
     }
 
+    func testActionEncodesDefaultTextInputLabels() throws {
+        let action = NotificationAction(identifier: "OPEN", title: "Open")
+
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(action)) as? [String: Any])
+        XCTAssertEqual(json["textInputButtonTitle"] as? String, action.textInputButtonTitle)
+        XCTAssertEqual(json["textInputPlaceholder"] as? String, action.textInputPlaceholder)
+    }
+
     // MARK: - NotificationCategory
 
     func testCategoryOptions() {

@@ -90,6 +90,13 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 
     func didReceive(_ notification: UNNotification) {
         let catID = notification.request.content.categoryIdentifier.lowercased()
+
+        // keep above the first `Current` access, which sets up `AppEnvironment` on a cold launch and delays the actions
+        // we only do it for 'dynamic' or unconfigured existing categories, so we don't stomp old configs
+        if catID == "dynamic" || extensionContext?.notificationActions.isEmpty == true {
+            extensionContext?.notificationActions = notification.request.content.userInfoActions
+        }
+
         Current.Log.verbose("Received a notif with userInfo \(notification.request.content.userInfo)")
 
         guard let server = Current.servers.server(for: notification.request.content) else {
@@ -100,11 +107,6 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
         guard let api = Current.api(for: server) else {
             Current.Log.error("No API available to handle func didReceive(_ notification: UNNotification)")
             return
-        }
-
-        // we only do it for 'dynamic' or unconfigured existing categories, so we don't stomp old configs
-        if catID == "dynamic" || extensionContext?.notificationActions.isEmpty == true {
-            extensionContext?.notificationActions = notification.request.content.userInfoActions
         }
 
         activeViewController = NotificationLoadingViewController()
